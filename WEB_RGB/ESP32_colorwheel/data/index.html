@@ -1,0 +1,221 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>HSB slider</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/roundSlider/1.6.1/roundslider.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/roundSlider/1.6.1/roundslider.js"></script>
+<link rel="stylesheet" type="text/css" href="custom_range.css">
+<style>
+        :root {
+            --some-color: red;
+            --bck-color: white;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        body{
+            background-color: var(--bck-color);
+        }
+
+        .center-container {
+            width: 70%;
+            height:90%;
+            padding: 10% 15% 10%;
+        }
+        .HSL-grid{
+            height: 100%;
+
+            display: grid;
+            grid-template-rows: 1fr 3fr 1fr;
+        }
+
+        .saturation_slider{
+            grid-row: 1/2;
+            place-self: top;
+        }
+
+        .hue_slider{
+            grid-row: 2 / 3;
+            place-self: center;
+        }
+
+        .lightness_slider{
+            grid-row: 3/4;
+            place-self: bottom;
+        }
+
+        .rs-path-color {
+            background-color: var(--some-color);
+        }
+
+        .rs-border .rs-seperator {
+            color:blue;
+            display: none;
+        }
+</style>
+</head>
+<body>
+    <div id="center-container" class="center-container">
+        <div id="HSL-grid" class="HSL-grid">
+            <input id="saturation_slider" class="saturation_slider" type="range" min="0" max="1" step="0.001" value="0.5">
+            <div id="hue_slider" class="hue_slider"></div>
+            <input id="lightness_slider" class="lightness_slider" type="range" min="0" max="1" step="0.001" value="0.5">
+        </div>
+    </div>
+<script>
+    const widthFrac = 0.15;
+    const thumb_offset = 12;
+
+    var gateway = `ws://${window.location.hostname}/ws`;
+    var websocket;
+
+    window.onresize = resizeEvent;
+    
+    function resizeEvent(e) {
+        var centerDiv = document.getElementById("HSL-grid").clientWidth;
+        var newR = centerDiv/2;
+        var newW = centerDiv*widthFrac;
+        //resize round slider
+        $("#hue_slider").roundSlider("option","radius",newR);
+        $("#hue_slider").roundSlider("option","width",newW);
+
+        //resize other sliders
+        
+        document.documentElement.style.setProperty("--track-height",newW+"px");
+        document.documentElement.style.setProperty("--thumb-radius",(newW+thumb_offset)+"px");
+        document.documentElement.style.setProperty("--margin-top",(-1*thumb_offset/2)+"px");
+        
+    };
+
+    window.addEventListener('load', onLoad);
+
+    function onLoad(event) {
+        var sliderWidth = document.getElementById("center-container").clientWidth;
+        $("#hue_slider").roundSlider({
+            min:0,
+            max:1,
+            step:0.001,
+            // customize the slider
+            radius: sliderWidth/2,
+            width: sliderWidth*widthFrac,
+            sliderType: "default",
+            startAngle: 90,
+            // enable animation
+            animation: false,
+            handleSize: "+"+thumb_offset,
+            beforeCreate: function (e) {
+                console.log("rounslider created!");
+                initWebSocket();
+                removeUnwantedThings();
+            },
+            create: function (e) {
+                //deleting seperator
+                console.log("removing seperator");
+                removeUnwantedThings();
+            },
+            update: function (e){          
+                removeUnwantedThings();
+                var val = e.value;
+                console.log("new value hue");
+                changeColor(val,null,null);
+            },
+            stop: function (e){
+                //send out new colour to other devices
+                websocket.send("getC");
+            }
+        });
+        removeUnwantedThings(); 
+        resizeEvent();
+
+        var sat_slider = document.getElementById("saturation_slider");
+        var light_slider = document.getElementById("lightness_slider");
+        sat_slider.oninput  = function (e) {
+            changeColor(null,e.value,null);
+        }
+        light_slider.oninput  = function (e) {
+            changeColor(null,null,e.value);
+        }
+
+        //sends request for getting color back from esp every second
+        setTimeout(function () {
+            console.log("sending request");
+            websocket.send("getC");
+        },1000); 
+
+    }
+
+    function removeUnwantedThings(){
+        var separator = document.getElementsByClassName("rs-seperator");
+        for (var i = 0;i<separator.length;i++){
+            separator[i].remove();
+        }
+        var border = document.getElementsByClassName("rs-border");
+        //console.log(border);
+        for (var i = 0;i<border.length;i++){
+            border[i].classList.remove("rs-border");
+        }
+    }
+
+    function changeColor(hue,sat,light,send = true){
+        if(sat == null){
+            sat = parseFloat(document.getElementById("saturation_slider").value);
+        }
+        if(hue==null){
+            hue = $("#hue_slider").roundSlider("getValue");
+        }
+        if(light==null){
+            light = parseFloat(document.getElementById("lightness_slider").value);
+        }
+        //background colour
+        document.documentElement.style.setProperty('--bck-color',"hsl("+(hue*360)+", "+(sat*100)+"%, "+(light*100)+"%)");
+        //hue slider colour        
+        document.documentElement.style.setProperty('--some-color',"hsl("+(hue*360)+", 100%, 50%)");
+        
+        //console.log(hue.toFixed(3));
+        if(send){
+            var message = "H".concat(hue.toFixed(3),"S",sat.toFixed(3),"L",light.toFixed(3));
+            console.log("sending color:"+message);
+            websocket.send(message);
+        }
+    }        
+        
+    function initWebSocket() {
+        console.log('Trying to open a WebSocket connection...');
+        websocket = new WebSocket(gateway);
+        websocket.onopen    = onOpen;
+        websocket.onclose   = onClose;
+        websocket.onmessage = onMessage; // <-- add this line
+    }
+    function onOpen(event) {
+        console.log('Connection opened');
+    }
+    function onClose(event) {
+        console.log('Connection closed');
+        setTimeout(initWebSocket, 2000);
+    }
+    function onMessage(event) {
+        //new color data arrives as H*.***S*.***L*.***
+        console.log("new data! "+event.data);
+        var hue = parseFloat(event.data.slice(1,6));
+        var sat = parseFloat(event.data.slice(7,12));
+        var light = parseFloat(event.data.slice(13,18));
+        changeColor(hue,sat,light,false); 
+        //set roundslider val
+        $("#hue_slider").roundSlider("setValue",hue); 
+        var sat_slider = document.getElementById("saturation_slider");
+        var light_slider = document.getElementById("lightness_slider");
+
+        sat_slider.value = sat;
+        light_slider.value = light;
+    }
+    
+</script>
+</body>
+</html>

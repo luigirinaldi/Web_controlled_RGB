@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSB slider</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/roundSlider/1.6.1/roundslider.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/roundSlider/1.6.1/roundslider.js"></script>
+    <style>
+        :root {
+            --some-color: lightblue;
+        }
+
+        .rs-path-color {
+            background-color: var(--some-color);
+        }
+
+        .rs-border .rs-seperator {
+            color:blue;
+            display: none;
+        }
+    </style>
+
+</head>
+<body>
+    <div id="slider"></div>
+    <script>
+         function removeUnwantedThings(){
+            var separator = document.getElementsByClassName("rs-seperator");
+            for (var i = 0;i<separator.length;i++){
+                separator[i].remove();
+            }
+            var border = document.getElementsByClassName("rs-border");
+            console.log(border);
+            for (var i = 0;i<border.length;i++){
+                border[i].classList.remove("rs-border");
+            }
+        }
+
+        $("#slider").roundSlider({
+            min:0,
+            max:1,
+            step:0.001,
+            // customize the slider
+            radius: 85,
+            width: 30,
+            sliderType: "default",
+            startAngle: 90,
+            // enable animation
+            animation: false,
+            handleSize: "+12",
+            valueChange: function (e){
+                var val = e.value;
+                document.documentElement.style.setProperty('--some-color',"hsl("+(val*360)+", 100%, 50%)");
+                removeUnwantedThings();
+            },
+        });
+        removeUnwantedThings();
+       
+
+    </script>
+</body>
+</html>

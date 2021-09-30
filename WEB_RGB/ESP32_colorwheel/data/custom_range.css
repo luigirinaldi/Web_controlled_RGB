@@ -1,0 +1,80 @@
+/*
+https://www.cssportal.com/style-input-range/
+*/
+:root {
+    --track-height: 30px;
+    --thumb-radius: 20px;
+    --margin-top: -5px;
+}
+
+input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    display: inline-block;
+  }
+  input[type=range]:focus {
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: var(--track-height);
+    cursor: pointer;
+    background: #74A9D8;
+    border-radius: var(--track-height);
+  }
+  input[type=range]::-webkit-slider-thumb {
+    height: var(--thumb-radius);
+    width: var(--thumb-radius);
+    border-radius: 50px;
+    background: #808080;
+    cursor: pointer;
+    -webkit-appearance: none;
+    margin-top: var(--margin-top);
+  }
+  input[type=range]:focus::-webkit-slider-runnable-track {
+    background: #74A9D8;
+  }
+  input[type=range]::-moz-range-track {
+    width: 100%;
+    height: var(--track-height);
+    cursor: pointer;
+    background: #74A9D8;
+    border-radius: 32px;
+  }
+  input[type=range]::-moz-range-thumb {
+    height: var(--slider-radius);
+    width: var(--slider-radius);
+    border-radius: var(--slider-radius);
+    background: #808080;
+    cursor: pointer;
+  }
+  input[type=range]::-ms-track {
+    width: 100%;
+    height: var(--track-height);
+    cursor: pointer;
+    background: transparent;
+    border-color: transparent;
+    color: transparent;
+  }
+  input[type=range]::-ms-fill-lower {
+    background: #74A9D8;
+    border-radius: 64px;
+  }
+  input[type=range]::-ms-fill-upper {
+    background: #74A9D8;
+    border-radius: 64px;
+  }
+  input[type=range]::-ms-thumb {
+    margin-top: 1px;
+    height: var(--slider-radius);
+    width: var(--slider-radius);
+    border-radius: var(--slider-radius);
+    background: #808080;
+    cursor: pointer;
+  }
+  input[type=range]:focus::-ms-fill-lower {
+    background: #74A9D8;
+  }
+  input[type=range]:focus::-ms-fill-upper {
+    background: #74A9D8;
+  }
